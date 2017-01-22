@@ -56,6 +56,25 @@ void egpfwDrawColoredTriangleImmediate(const float *mvp, const int mvpLoc)
 {
 	glPushMatrix();
 	//...
+	glLoadMatrixf(mvp);
+
+	// if shaders are being used, mvp should be sent as a uniform
+	// this is still considered immediate mode because the data 
+	//	is discarded immediately after it is used
+	glUniformMatrix4fv(mvpLoc, 1, 0, mvp);
+
+	glBegin(GL_TRIANGLES);
+	//top
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(1.0f, 0.0f, 0.0f);
+	//left
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 1.0f, 0.0f);
+	//right
+	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(0.0f, 0.0f, 1.0f);
+
+	glEnd();
 	glPopMatrix();
 }
 
@@ -68,6 +87,32 @@ void egpfwDrawColoredUnitQuadImmediate(const float *mvp, const int mvpLoc)
 {
 	glPushMatrix();
 	//...
+	glLoadMatrixf(mvp);
+
+	// if shaders are being used, mvp should be sent as a uniform
+	// this is still considered immediate mode because the data 
+	//	is discarded immediately after it is used
+	glUniformMatrix4fv(mvpLoc, 1, 0, mvp);
+
+	glBegin(GL_TRIANGLE_STRIP);
+	// top right (yellow)
+	glColor3f(1.0f, 1.0f, 0.0f);
+	glVertex3f(1.0f, 1.0f, 0.0f);
+
+	//top left (green)
+	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(-1.0f, 1.0f, 0.0f);
+
+	// bottom right (red)
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(1.0f, -1.0f, 0.0f);
+
+	// bottom left (black)
+	glColor3f(0.0f, 0.0f, 0.0f);
+	glVertex3f(-1.0f, -1.0f, 0.0f);
+
+	glEnd();
+
 	glPopMatrix();
 }
 
