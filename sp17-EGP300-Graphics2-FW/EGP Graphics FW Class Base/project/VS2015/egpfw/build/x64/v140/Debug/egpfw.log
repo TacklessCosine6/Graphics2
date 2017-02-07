@@ -1,0 +1,6 @@
+﻿  egpfwVertexBuffer.c
+  egpfwShaderProgram.c
+  egpfwPrimitiveDataSimple.c
+  egpfwOBJLoader.c
+  Generating Code...
+  egpfw.vcxproj -> C:\Users\Student\Desktop\Graphics\sp17-EGP300-Graphics2-FW\EGP Graphics FW Class Base\lib\x64\v140\Debug\egpfw.lib
