@@ -12,8 +12,10 @@
 
 // ****
 // varyings
-
-layout (location = 0) out vec4 color;
+in vertex
+{
+	vec2 textCoord;
+} data;
 
 // ****
 // uniforms: 
@@ -21,16 +23,14 @@ layout (location = 0) out vec4 color;
 //		layout (binding = <texture index>) uniform <sampler type> <name>;
 // ...otherwise they are declared just like other uniforms: 
 //		uniform <sampler type> <name>;
-
+uniform sampler2D tex_dm;
 
 // ****
 // target
-
+layout(location = 0) out vec4 color;
 
 // shader function
 void main()
 {
-	// ****
-	// output: this example: sample texture, copy to target
-	color = data.texcoord;
+	color = texture(tex_dm, data.textCoord);
 }

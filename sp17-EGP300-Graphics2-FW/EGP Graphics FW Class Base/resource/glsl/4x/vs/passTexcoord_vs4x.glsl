@@ -12,34 +12,28 @@
 
 // ****
 // attributes
-layout (location = 0) in vec4 position;
-layout (location = 3) in vec4 color;
-
-layout (location = 2) in vec4 normal;
-layout (location = 8) in vec4 texcoord;
+layout(location = 0) in vec4 position;
+layout(location = 8) in vec4 textCoord;
 
 // ****
 // uniforms
-
-uniform vec4 mvp;
+uniform mat4 mvp;
 
 // ****
 // varyings
-
 out vertex
 {
-	vec4 texcoord;
+ vec2 textCoord;
 } data;
 
 // shader function
 void main()
 {
+	gl_Position = mvp * position;
 	// ****
 	// set proper clip position
-	
-	gl_Position = mvp * position;
 
 	// ****
 	// pass data
-	data.texcoord = texcoord;
+	data.textCoord = textCoord.xy;
 }
