@@ -62,6 +62,7 @@ egpAttributeDescriptor egpfwCreateAttributeDescriptor(const egpAttributeName nam
 {
 	egpAttributeDescriptor attr = { 0 };
 	//...
+
 	return attr;
 }
 

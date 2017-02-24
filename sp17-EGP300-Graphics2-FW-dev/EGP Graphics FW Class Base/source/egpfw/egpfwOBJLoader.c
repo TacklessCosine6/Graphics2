@@ -72,54 +72,64 @@ egpTriOBJDescriptor egpfwLoadTriangleOBJ(const char *objPath, const egpMeshNorma
 	if (file == NULL)
 		printf("\nCould not open file %s!\n", objPath);
 
-
+	//Get file size
 	fseek(file, 0L, SEEK_END);
 	int fileSize = ftell(file);
 	rewind(file);
 
 	float* theData = (float*)malloc(fileSize);
 
+	//Set start index for vertecies
 	obj.attribOffset[ATTRIB_POSITION] = 0;
 
 	int count = 0;
-	int currAttrIndex = 0;
-	char* str = (char*)malloc(sizeof(char) * 100);
-	fgets(str, 100, file);
-	if (str == NULL)
-		printf("Cound not read from OBJ file!\n");
-
-	while (!(str[0] == 'v' && str[1] == ' '))
-	{
-		fgets(str, 100, file);
-		if (str == NULL)
-			printf("Could not read from OBJ file");
-
-		printf("\n%s", str);
-	}
-
-	if (str == NULL)
-		printf("No OBJ verteces could be found in %s!\n", objPath);
-
-
-	char* num = (char*)malloc(sizeof(char) * 10);
-
 	int currStrIndex;
+	int currAttrIndex = 0;
 	int currNumIndex = 0;
 
+	const int BUFFER_SIZE = 100;
+
+	char* str = (char*)calloc(BUFFER_SIZE, sizeof(char));;
+	char* num = (char*)calloc(BUFFER_SIZE, sizeof(char));
+
+	for (int i = 0; i < BUFFER_SIZE; i++)
+	{
+		str[i] = '\0';
+		num[i] = '\0';
+	}
+
+	//Read first line
+	if (fgets(str, BUFFER_SIZE, file) == NULL)
+		printf("Cound not read from OBJ file!\n");
+
+	//Skip unwanted lines
+	while (!(str[0] == 'v' && str[1] == ' '))
+	{
+		if (fgets(str, BUFFER_SIZE, file) == NULL)
+		{
+			printf("Could not read from OBJ file");
+			break;
+		}
+	}
+
+	//Read vertecies
 	while (str[0] == 'v' && str[1] == ' ')
 	{
+		//Skip the identifier ("v ")
 		currStrIndex = 2;
 
+		//3 numbers per vertex
 		for (int i = 0; i < 3; i++)
 		{
 			while (str[currStrIndex] != ' ')
 				num[currNumIndex++] = str[currStrIndex++];
 
 			float temp = strtof(num, NULL);
-			theData[currAttrIndex] = temp;
+			//Convert from 1 indexed to 0 indexed
+			theData[currAttrIndex] = temp - 1;
 
-			for (int j = 0; j < 10; j++)
-				num[j] = 0;
+			for (int j = 0; j < BUFFER_SIZE; j++)
+				num[j] = '\0';
 
 			currNumIndex = 0;
 			currStrIndex++;
@@ -127,50 +137,60 @@ egpTriOBJDescriptor egpfwLoadTriangleOBJ(const char *objPath, const egpMeshNorma
 			currAttrIndex++;
 		}
 
-
-		fgets(str, 100, file);
-		if (str == NULL)
+		if (fgets(str, BUFFER_SIZE, file) == NULL)
+		{
 			printf("Could not read from OBJ file");
+			break;
+		}
 	}
 
+	//Set start index for UVs
+	obj.attribOffset[ATTRIB_TEXCOORD] = currAttrIndex * sizeof(float);
 	count = 0;
-	obj.attribOffset[ATTRIB_TEXCOORD] = currAttrIndex;
 
+	//Read UVs
 	while (str[0] == 'v' && str[1] == 't' && str[2] == ' ')
 	{
+		//Skip the identifier ("vt ")
 		currStrIndex = 3;
+
+		//2 numbers per UV
 		for (int i = 0; i < 2; i++)
 		{
+			//Parse line to get number
 			while (str[currStrIndex] != ' ')
 				num[currNumIndex++] = str[currStrIndex++];
 
 			float temp = strtof(num, NULL);
-			printf("%f\n", temp);
 			theData[currAttrIndex] = temp;
 
-			for (int j = 0; j < 10; j++)
-				num[j] = 0;
+			for (int j = 0; j < BUFFER_SIZE; j++)
+				num[j] = '\0';
 
 			currNumIndex = 0;
 			currStrIndex++;
 			count++;
-			currAttrIndex++;
+			currAttrIndex ++;
 		}
 
-		fgets(str, 100, file);
-		if (str == NULL)
+		if (fgets(str, BUFFER_SIZE, file) == NULL)
+		{
 			printf("Could not read from OBJ file");
-
-		printf("\n%s", str);
+			break;
+		}
 	}
 
+	//Set starting index for the normals
+	obj.attribOffset[ATTRIB_NORMAL] = currAttrIndex * sizeof(float);
 	count = 0;
-	obj.attribOffset[ATTRIB_NORMAL] = currAttrIndex;
 
+	//Read in normals
 	while (str[0] == 'v' && str[1] == 'n' && str[2] == ' ')
 	{
+		//Skip the identifier ("vn ")
 		currStrIndex = 3;
 
+		//3 numbers per normal
 		for (int i = 0; i < 3; i++)
 		{
 			while (str[currStrIndex] != ' ')
@@ -179,8 +199,8 @@ egpTriOBJDescriptor egpfwLoadTriangleOBJ(const char *objPath, const egpMeshNorma
 			float temp = strtof(num, NULL);
 			theData[currAttrIndex] = temp;
 
-			for (int j = 0; j < 10; j++)
-				num[j] = 0;
+			for (int j = 0; j < BUFFER_SIZE; j++)
+				num[j] = '\0';
 
 			currNumIndex = 0;
 			currStrIndex++;
@@ -189,32 +209,69 @@ egpTriOBJDescriptor egpfwLoadTriangleOBJ(const char *objPath, const egpMeshNorma
 		}
 
 
-		fgets(str, 100, file);
-		if (str == NULL)
+		if (fgets(str, BUFFER_SIZE, file) == NULL)
 			printf("Could not read from OBJ file");
 	}
+
+	obj.dataSize = (count + obj.attribOffset[ATTRIB_NORMAL]) * sizeof(float);
+
+	obj.faces = (int*)malloc(fileSize);
 
 	while (!(str[0] == 'f' && str[1] == ' '))
 	{
-		fgets(str, 100, file);
+		fgets(str, BUFFER_SIZE, file);
 		if (str == NULL)
 			printf("Could not read from OBJ file");
-
-		printf("\n%s", str);
 	}
 
+	//Reuse for face array
+	currAttrIndex = 0;
+	count = 0;
+	char* token;
 
-
-	for (int j = 0; j < count + obj.attribOffset[ATTRIB_NORMAL]; j++)
+	//Read in faces
+	while (str[0] == 'f' && str[1] == ' ' && !feof(file))
 	{
-		printf("%f\n", theData[j]);
+		//Skip the identifier ("f ")
+		currStrIndex = 2;
+
+		//3 sets of indeces
+		for (int i = 0; i < 3; i++)
+		{
+			while (str[currStrIndex] != ' ')
+				num[currNumIndex++] = str[currStrIndex++];
+
+			//Get ints divided by delimiter '/'
+			token = strtok(num, "/");
+			while (token)
+			{
+				int temp = atoi(token);
+				obj.faces[currAttrIndex++] = temp;
+				token = strtok(NULL, "/");
+			}
+
+			for (int j = 0; j < BUFFER_SIZE; j++)
+				num[j] = '\0';
+
+			currNumIndex = 0;
+			currStrIndex++;
+		}
+
+		count++;
+
+		fgets(str, BUFFER_SIZE, file);
+		if (str == NULL)
+{
+			printf("Could not read from OBJ file");
+			break;
+		}
 	}
 
+	obj.numFaces = count;
 
-
-	fclose(file);
-	free(str);
 	free(num);
+	free(str);
+	fclose(file);
 
 	obj.data = theData;
 	return obj;
@@ -222,22 +279,70 @@ egpTriOBJDescriptor egpfwLoadTriangleOBJ(const char *objPath, const egpMeshNorma
 
 
 // ****
+//Brandon Cote wuz Here
 // convert OBJ to VAO & VBO
 int egpfwCreateVAOFromOBJ(const egpTriOBJDescriptor *obj, egpVertexArrayObjectDescriptor *vao_out, egpVertexBufferObjectDescriptor *vbo_out)
 {
-	egpAttributeDescriptor attribs[] = {
-		(ATTRIB_POSITION, ATTRIB_VEC3, egpfwGetOBJAttributeData(obj, ATTRIB_POSITION)),
-		(ATTRIB_COLOR, ATTRIB_VEC3, egpfwGetOBJAttributeData(obj, ATTRIB_COLOR)),
-		(ATTRIB_NORMAL, ATTRIB_VEC3, egpfwGetOBJAttributeData(obj, ATTRIB_NORMAL)),
-		(ATTRIB_TEXCOORD, ATTRIB_VEC2, egpfwGetOBJAttributeData(obj, ATTRIB_TEXCOORD)),
-	};
+	//seperate out the data from the contiguous list for ease of use later when interleaving
+	float3* data_positions = (float3*)(BUFFER_OFFSET_BYTE(obj->data, obj->attribOffset[ATTRIB_POSITION]));
+	float3* data_normals = (float3*)(BUFFER_OFFSET_BYTE(obj->data, obj->attribOffset[ATTRIB_NORMAL]));
+	float2* data_texcoords = (float2*)(BUFFER_OFFSET_BYTE(obj->data, obj->attribOffset[ATTRIB_TEXCOORD]));
 
-	//junk ? creating a vao requires
-	egpIndexBufferObjectDescriptor* ibo;
+	unsigned int vertexCount = obj->numFaces*3;
 
-	 *vao_out = egpfwCreateVAOInterleaved(PRIM_TRIANGLES, attribs, 4, egpfwGetOBJNumVertices(obj), vbo_out , ibo);
+	float3* posBuffer = malloc(sizeof(float3) * vertexCount);
+	float3* norBuffer = malloc(sizeof(float3) * vertexCount);
+	float2* texBuffer = malloc(sizeof(float2) * vertexCount);
 
-	egpfwReleaseOBJ(obj);
+	//iterleave
+	int j = 0;
+	for (int i = 0; i < obj->numFaces * 3; i++)
+	{
+		//put the face's first vertex in
+		posBuffer[i] = data_positions[obj->faces[j]-1];
+		j++;
+		norBuffer[i] = data_normals[obj->faces[j]-1];
+		j++;
+		texBuffer[i] = data_texcoords[obj->faces[j]-1];
+		j++;
+		i++;
+
+		//put the face's second vertex in
+		posBuffer[i] = data_positions[obj->faces[j]-1];
+		j++;
+		norBuffer[i] = data_normals[obj->faces[j]-1];
+		j++;
+		texBuffer[i] = data_texcoords[obj->faces[j]-1];
+		j++;
+		i++;
+
+		//put the face's third vertex in
+		posBuffer[i] = data_positions[obj->faces[j]-1];
+		j++;
+		norBuffer[i] = data_normals[obj->faces[j]-1];
+		j++;
+		texBuffer[i] = data_texcoords[obj->faces[j]-1];
+		j++;
+	}
+
+	egpAttributeDescriptor positionAttribs = egpCreateAttributeDescriptor(ATTRIB_POSITION, ATTRIB_VEC3, posBuffer);
+	egpAttributeDescriptor normalAttribs = egpCreateAttributeDescriptor(ATTRIB_NORMAL, ATTRIB_VEC3, norBuffer);
+	egpAttributeDescriptor textureAttribs = egpCreateAttributeDescriptor(ATTRIB_TEXCOORD, ATTRIB_VEC2, texBuffer);
+
+
+	egpAttributeDescriptor attribs[3];
+	attribs[0] = positionAttribs;
+	attribs[1] = normalAttribs;
+	attribs[2] = textureAttribs;
+
+	*vbo_out = egpCreateVBOInterleaved(attribs, 3, vertexCount);
+	*vao_out = egpCreateVAO(PRIM_TRIANGLES, vbo_out, NULL);
+
+	//free memory
+	free(posBuffer);
+	free(norBuffer);
+	free(texBuffer);
+
 	return 0;
 }
 
@@ -248,7 +353,7 @@ int egpfwReleaseOBJ(egpTriOBJDescriptor *obj)
 {
 	//... Here
 
-	free(obj);
+	free(obj->data);
 
 	return 0;
 }
@@ -258,7 +363,7 @@ int egpfwReleaseOBJ(egpTriOBJDescriptor *obj)
 // save/load binary
 int egpfwSaveBinaryOBJ(const egpTriOBJDescriptor *obj, const char *binPath)
 {
-	
+
 	return 0;
 }
 
